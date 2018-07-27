@@ -1,0 +1,121 @@
+#!/usr/bin/env ruby
+
+require 'fileutils'
+require 'rexml/document'
+include REXML
+
+puts "Application Insights buildpack"
+
+@poms = Array.new()
+
+def travel(path)
+    Dir.foreach(path) {|e|
+        if e == "." || e == ".." || e == "target" then
+            next
+        end
+        _f = path + '/' + e
+        if e == "pom.xml" then
+            puts "Found pom.xml at #{_f}"
+
+            @poms << _f
+        end
+        if File.directory? _f then
+            travel(_f + '/')
+        end
+    }
+end
+
+# Search through source code
+travel ARGV[0]
+
+# build dependency element
+
+dependency = Element.new('dependency')
+dependency.add_element('groupId')
+dependency.add_element('artifactId')
+dependency.add_element('version')
+dependency.elements['groupId'].text = 'com.microsoft.azure'
+dependency.elements['artifactId'].text = 'applicationinsights-web'
+dependency.elements['version'].text = '[2.0,)'
+
+# build repository element
+
+repository = Element.new('repository')
+repository.add_element('id')
+repository.add_element('name')
+repository.add_element('url')
+repository.elements['id'].text = 'central'
+repository.elements['name'].text = 'central'
+repository.elements['url'].text = 'http://repo1.maven.org/maven2'
+
+springframework = false
+
+if @poms.empty? then
+    # Consider inserting binary
+else
+    puts "Updating pom.xml"
+    @poms.each{|pom|
+        puts 'Inserting dependencies for Application Insights into' + pom
+
+        # read pom.xml
+        file = File.open(pom, 'r')
+        doc = Document.new(file)
+
+        # create <dependencies> node if not exist
+        dependencies = doc.root.elements['dependencies']
+        if !dependencies then
+            dependencies = Element.new('dependencies')
+            doc.root.add_element(dependencies)
+        end
+
+        # add dependency to pom if not exist
+        dependency_exist = false
+        dependencies.each_element() { |current_dependency|
+            if current_dependency.elements['artifactId'].include? 'applicationinsights-web' then
+                dependency_exist = true
+            elsif current_dependency.elements['artifactId'].include? 'spring-boot-starter-web' then
+                springframework = true
+            end
+        }
+        if !dependency_exist then
+            dependencies.add_element(dependency)
+        end
+
+        # create <repositories> node if not exist
+        repositories = doc.root.elements['repositories']
+        if !repositories then
+            repositories = Element.new('repositories')
+            doc.root.add_element(repositories)
+        end
+
+        # add repository to pom if not exist
+        repository_exist = false
+        repositories.each_element() { |current_repository|
+            if current_repository.elements['id'] == 'central' then
+                repository_exist = true
+            end
+        }
+        if !repository_exist then
+            repositories.add_element(repository)
+        end
+
+        # write back
+        file = File.open(pom, 'w')
+        doc.write(file, 4)
+    }
+end
+
+# copy ApplicationInsights.xml
+print 'Inserting ApplicationInsights.xml ... '
+FileUtils.cp('../resources/ApplicationInsights.xml', ARGV[0] + '/src/main/resources/')
+print "done.\n"
+
+# copy AppInsightsConfig.java
+if springframework then
+    print 'Inserting AppInsightsConfig.java ... '
+    FileUtils.mkdir_p(ARGV[0] + '/src/main/java/com/microsoft/azure/appsinsights/')
+    FileUtils.cp('../resources/AppInsightsConfig.java', ARGV[0] + '/src/main/java/com/microsoft/azure/appsinsights/')
+    print "done.\n"
+end
+
+puts 'Instrucmentation of Application Insights completed'
