@@ -26,7 +26,7 @@ def travel(path)
 end
 
 # Search through source code
-travel ARGV[0]
+travel ARGV[1]
 
 # build dependency element
 
@@ -107,14 +107,14 @@ end
 
 # copy ApplicationInsights.xml
 print 'Inserting ApplicationInsights.xml ... '
-FileUtils.cp('../resources/ApplicationInsights.xml', ARGV[0] + '/src/main/resources/')
+FileUtils.cp(ARGV[0] + '/resources/ApplicationInsights.xml', ARGV[1] + '/src/main/resources/')
 print "done.\n"
 
 # copy AppInsightsConfig.java
 if springframework then
     print 'Inserting AppInsightsConfig.java ... '
-    FileUtils.mkdir_p(ARGV[0] + '/src/main/java/com/microsoft/azure/appsinsights/')
-    FileUtils.cp('../resources/AppInsightsConfig.java', ARGV[0] + '/src/main/java/com/microsoft/azure/appsinsights/')
+    FileUtils.mkdir_p(ARGV[1] + '/src/main/java/com/microsoft/azure/appsinsights/')
+    FileUtils.cp(ARGV[0] + '/resources/AppInsightsConfig.java', ARGV[1] + '/src/main/java/com/microsoft/azure/appsinsights/')
     print "done.\n"
 end
 

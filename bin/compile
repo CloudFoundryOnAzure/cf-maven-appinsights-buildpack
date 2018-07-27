@@ -7,6 +7,6 @@
 #  python scripts, like install Python.
 BP=$(dirname $(dirname $0))
 chmod +x $BP/scripts/supply
-$BP/scripts/supply $1
+$BP/scripts/supply $BP $1
 export PYTHONPATH=$BP/lib
 python $BP/scripts/compile.py $1 $2
