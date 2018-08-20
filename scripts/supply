@@ -7,6 +7,9 @@ include REXML
 puts "Application Insights buildpack"
 
 @poms = Array.new()
+@gradles = Array.new()
+@first_folder_with_source_code = nil
+
 # Search through source code
 path_queue = Queue.new()
 path_queue << ARGV[1]
@@ -32,6 +35,8 @@ while !path_queue.empty?
 
             @poms << _f
         end
+        if (@first_folder_with_source_code == nil) && (e.end_with? ".java") then
+            @first_folder_with_source_code = path
         end
     }
 end
@@ -120,9 +125,20 @@ print "done.\n"
 
 # copy AppInsightsConfig.java
 if springframework then
-    print 'Inserting AppInsightsConfig.java ... '
-    FileUtils.mkdir_p(ARGV[1] + '/src/main/java/com/microsoft/azure/appsinsights/')
-    FileUtils.cp(ARGV[0] + '/resources/AppInsightsConfig.java', ARGV[1] + '/src/main/java/com/microsoft/azure/appsinsights/')
+    source_code_folder_base_pattern = "/src/main/java/"
+    application_insights_config_class_package_placeholder = "APPLICATION_INSIGHTS_CONFIG_CLASS_PACKAGE_PLACEHOLDER"
+
+    application_insights_config_class_location = @first_folder_with_source_code + "/applicationinsights"
+    application_insights_config_class_package_name = application_insights_config_class_location[application_insights_config_class_location.rindex(source_code_folder_base_pattern) + source_code_folder_base_pattern.length .. -1].gsub(/\//, '.')
+
+    print 'Inserting AppInsightsConfig.java to ' + application_insights_config_class_location + ' ... '
+    FileUtils.mkdir_p(application_insights_config_class_location)
+
+    file = File.open(ARGV[0] + '/resources/AppInsightsConfig.java', 'r')
+    content = File.read(file)
+    content = content.gsub(application_insights_config_class_package_placeholder, application_insights_config_class_package_name)
+    File.open(application_insights_config_class_location + "/AppInsightsConfig.java", "w") {|file| file.puts content }
+
     print "done.\n"
 end
 
