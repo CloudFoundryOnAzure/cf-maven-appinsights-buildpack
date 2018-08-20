@@ -35,6 +35,11 @@ while !path_queue.empty?
 
             @poms << _f
         end
+        if e == "build.gradle" then
+            puts "Found build.gradle at #{_f}"
+
+            @gradles << _f
+        end
         if (@first_folder_with_source_code == nil) && (e.end_with? ".java") then
             @first_folder_with_source_code = path
         end
@@ -86,7 +91,7 @@ else
                 puts "Application Insights dependency exist in " + pom + ", skipping"
                 dependency_exist = true
             elsif current_dependency.elements['artifactId'].include? 'spring-boot-starter-web' then
-                puts "Spring Framework dependency derected in " + pom
+                puts "Spring Framework dependency detected in " + pom
                 springframework = true
             end
         }
@@ -116,6 +121,49 @@ else
         file = File.open(pom, 'w')
         doc.write(file, 4)
     }
+end
+
+if @gradles.empty? then
+    puts "No build.gradle found for injecting geadle dependencies."
+else
+    maven_central_repository_test_regex = /repositories[^{]*{[^}]*mavenCentral\(\)/
+    maven_central_repository_replace_regex = /(repositories[^{]*{)([\W]*)((\})*})/
+    maven_central_repository = "\\1\\2mavenCentral()\\2\\3"
+    application_insights_dependency_test_regex = /dependencies[^{]*{[^}]*applicationinsights/
+    application_insights_dependency_replace_regex = /(dependencies[^{]*{)([ \t\r\n]*)([^}]*})/
+    application_insights_dependency = "\\1\\2compile group: 'com.microsoft.azure', name: 'applicationinsights-web', version: '2.+'\\2\\3"
+    springframework_dependency_test_regex = /dependencies[^{]*{[^}]*org.springframework/
+
+    def brace_delta(content, index)
+        substring = content[0..index]
+        return substring.count('{') - substring.count('}')
+    end
+
+    @gradles.each do |current_file|
+        puts "Injecting dependencies for Application Insights to " + current_file
+        content = File.read(current_file)
+
+        if content.match(springframework_dependency_test_regex) then
+            puts "Spring Framework dependency detected in " + current_file
+            springframework = true
+        end
+
+        print "Adding maven Central repository... "
+        content = content.gsub(maven_central_repository_replace_regex) { |current_content|
+            brace_delta(content, Regexp.last_match.offset(0).first) <= 0 && !current_content.match(maven_central_repository_test_regex) ? current_content.gsub(maven_central_repository_replace_regex, maven_central_repository) : current_content
+        }
+        print "done.\n"
+
+        print "Adding Application Insights compile group ... "
+        content = content.gsub(application_insights_dependency_replace_regex) { |current_content|
+            brace_delta(content, Regexp.last_match.offset(0).first) <= 0 && !current_content.match(application_insights_dependency_test_regex) ? current_content.gsub(application_insights_dependency_replace_regex, application_insights_dependency) : current_content
+        }
+        print "done.\n"
+
+        print "Writing back to " + current_file + " ... "
+        File.open(current_file, "w") {|file| file.puts content }
+        print "done\n"
+    end
 end
 
 # copy ApplicationInsights.xml
