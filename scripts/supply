@@ -36,31 +36,29 @@ while !path_queue.empty?
     }
 end
 
-# build dependency element
-
-dependency = Element.new('dependency')
-dependency.add_element('groupId')
-dependency.add_element('artifactId')
-dependency.add_element('version')
-dependency.elements['groupId'].text = 'com.microsoft.azure'
-dependency.elements['artifactId'].text = 'applicationinsights-web'
-dependency.elements['version'].text = '[2.0,)'
-
-# build repository element
-
-repository = Element.new('repository')
-repository.add_element('id')
-repository.add_element('name')
-repository.add_element('url')
-repository.elements['id'].text = 'central'
-repository.elements['name'].text = 'central'
-repository.elements['url'].text = 'http://repo1.maven.org/maven2'
-
 springframework = false
 
 if @poms.empty? then
-    # Consider inserting binary
+    puts "No pom.xml found for injecting maven dependencies."
 else
+    # build dependency element
+    dependency = Element.new('dependency')
+    dependency.add_element('groupId')
+    dependency.add_element('artifactId')
+    dependency.add_element('version')
+    dependency.elements['groupId'].text = 'com.microsoft.azure'
+    dependency.elements['artifactId'].text = 'applicationinsights-web'
+    dependency.elements['version'].text = '[2.0,)'
+
+    # build repository element
+    repository = Element.new('repository')
+    repository.add_element('id')
+    repository.add_element('name')
+    repository.add_element('url')
+    repository.elements['id'].text = 'central'
+    repository.elements['name'].text = 'central'
+    repository.elements['url'].text = 'http://repo1.maven.org/maven2'
+
     puts "Updating pom.xml"
     @poms.each{|pom|
         puts 'Inserting dependencies for Application Insights into' + pom
@@ -80,8 +78,10 @@ else
         dependency_exist = false
         dependencies.each_element() { |current_dependency|
             if current_dependency.elements['artifactId'].include? 'applicationinsights-web' then
+                puts "Application Insights dependency exist in " + pom + ", skipping"
                 dependency_exist = true
             elsif current_dependency.elements['artifactId'].include? 'spring-boot-starter-web' then
+                puts "Spring Framework dependency derected in " + pom
                 springframework = true
             end
         }
