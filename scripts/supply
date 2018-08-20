@@ -7,26 +7,34 @@ include REXML
 puts "Application Insights buildpack"
 
 @poms = Array.new()
+# Search through source code
+path_queue = Queue.new()
+path_queue << ARGV[1]
 
-def travel(path)
+while !path_queue.empty?
+    path = path_queue.pop()
+
     Dir.foreach(path) {|e|
         if e == "." || e == ".." || e == "target" then
             next
         end
-        _f = path + '/' + e
+        if path.end_with? "/" then
+            _f = path + e
+        else
+            _f = path + '/' + e
+        end
+        if File.directory? _f then
+            path_queue << _f
+            next
+        end
         if e == "pom.xml" then
             puts "Found pom.xml at #{_f}"
 
             @poms << _f
         end
-        if File.directory? _f then
-            travel(_f + '/')
         end
     }
 end
-
-# Search through source code
-travel ARGV[1]
 
 # build dependency element
 
