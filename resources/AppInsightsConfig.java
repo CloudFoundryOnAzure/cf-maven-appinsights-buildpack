@@ -3,7 +3,7 @@
  * Licensed under the MIT License. See LICENSE in the project root for
  * license information.
  */
-package com.microsoft.azure.appsinsights;
+package APPLICATION_INSIGHTS_CONFIG_CLASS_PACKAGE_PLACEHOLDER;
 
 import javax.servlet.Filter;
 
