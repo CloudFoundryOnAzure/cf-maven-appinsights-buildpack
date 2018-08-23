@@ -23,7 +23,7 @@ def maven_command(cfg):
     mvn = os.path.join(cfg['MAVEN_INSTALL_PATH'], 'bin', 'mvn')
     mvnRepo = os.path.join(cfg['CACHE_DIR'], 'repo')
     pom = os.path.join(cfg['BUILD_DIR'], 'pom.xml')
-    return [mvn, '-Dmaven.repo.local=%s' % mvnRepo, '-f', pom, mvnCmd]
+    return [mvn, '-Dmaven.repo.local=%s' % mvnRepo, '-f', pom, mvnCmd, '--batch-mode']
 
 
 def copy_maven_repo_to_droplet(cfg):
@@ -31,7 +31,7 @@ def copy_maven_repo_to_droplet(cfg):
 
 
 def log_run(cmd, retcode, stdout, stderr):
-    print 'Comand %s completed with [%d]' % (str(cmd), retcode)
+    print 'Command %s completed with [%d]' % (str(cmd), retcode)
     print 'STDOUT:'
     print stdout
     print 'STDERR:'
