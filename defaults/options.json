@@ -11,5 +11,7 @@
     "MAVEN_PACKAGE_HASH": "bbfa43a4ce4ef96732b896d057f8a613aa229801",
     "MAVEN_STRIP": true,
     "MAVEN_BUILD_COMMAND": "clean package",
-    "MAVEN_RUN_COMMAND": "spring-boot:run"
+    "MAVEN_RUN_COMMAND": "spring-boot:run",
+    "APPLICATION_INSIGHTS_AGENT_PREFIX": "https://github.com/Microsoft/ApplicationInsights-Java/releases/download/2.1.2/",
+    "APPLICATION_INSIGHTS_AGENT": "applicationinsights-agent-2.1.2.jar"
 }
