@@ -70,7 +70,7 @@ if __name__ == '__main__':
             .environment_variable()
                 .name('APPLICATION_INSIGHTS_AGENT')
                 .value('APPLICATION_INSIGHTS_AGENT')
-            .command('wget $APPLICATION_INSIGHTS_AGENT_PREFIX$APPLICATION_INSIGHTS_AGENT -o $APPLICATION_INSIGHTS_AGENT -nv')
+            .command('wget $APPLICATION_INSIGHTS_AGENT_PREFIX$APPLICATION_INSIGHTS_AGENT -O $APPLICATION_INSIGHTS_AGENT -nv; ')
             .out_of('BUILD_DIR')
             .with_shell()
             .done()
