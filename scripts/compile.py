@@ -15,6 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
+import urlparse
 from build_pack_utils import Builder
 
 
@@ -29,6 +30,16 @@ def maven_command(cfg):
 def copy_maven_repo_to_droplet(cfg):
     return ['cp', '-R', os.path.join(cfg['CACHE_DIR'], 'repo'), '.']
 
+
+def download_application_insights_java_agent(cfg):
+    agentUrl = urlparse.urljoin(cfg['APPLICATION_INSIGHTS_AGENT_PREFIX'], cfg['APPLICATION_INSIGHTS_AGENT'])
+    agentTarget = os.path.join(cfg['APPLICATION_INSIGHTS_AGENT'])
+    return ['wget', agentUrl, '-O', agentTarget, '-nv']
+
+
+def copy_application_insights_java_agent_configuration(cfg):
+    agentConfig = os.path.join(cfg['BP_DIR'], 'resources', 'AI-Agent.xml')
+    return ['cp', agentConfig, '.']
 
 def log_run(cmd, retcode, stdout, stderr):
     print 'Command %s completed with [%d]' % (str(cmd), retcode)
@@ -64,6 +75,16 @@ if __name__ == '__main__':
             .on_finish(log_run)
             .done()
         .run()
+            .command(download_application_insights_java_agent)
+            .out_of('BUILD_DIR')
+            .with_shell()
+            .done()
+        .run()
+            .command(copy_application_insights_java_agent_configuration)
+            .out_of('BUILD_DIR')
+            .with_shell()
+            .done()
+        .run()
             .command(copy_maven_repo_to_droplet)
             .out_of('BUILD_DIR')
             .done()
@@ -76,6 +97,14 @@ if __name__ == '__main__':
                 .export()
                 .name('M2_HOME')
                 .value('MAVEN_INSTALL_PATH')
+            .environment_variable()
+                .export()
+                .name('APPLICATION_INSIGHTS_AGENT')
+                .value('APPLICATION_INSIGHTS_AGENT')    
+            .environment_variable()
+                .export()
+                .name('MAVEN_OPTS')
+                .value('"$MAVEN_OPTS -javaagent:$HOME/$APPLICATION_INSIGHTS_AGENT"')
             .command()
                 .run('$M2_HOME/bin/mvn')
                 .with_argument('-Dmaven.repo.local=$HOME/repo')
